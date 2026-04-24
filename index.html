@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Cricket Umpire Counter</title>
+<style>
+  /* =============================================
+     FONTS & CSS VARIABLES
+  ============================================= */
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Oswald:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg-primary: #0a0f0d;
+    --bg-secondary: #111a15;
+    --bg-card: #152019;
+    --bg-elevated: #1c2b20;
+    --accent-green: #22c55e;
+    --accent-lime: #84cc16;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-blue: #3b82f6;
+    --accent-orange: #f97316;
+    --text-primary: #f0fdf4;
+    --text-secondary: #86efac;
+    --text-muted: #4ade80;
+    --text-dim: #166534;
+    --border-color: #1e3a25;
+    --border-glow: rgba(34, 197, 94, 0.3);
+    --shadow-green: 0 0 20px rgba(34, 197, 94, 0.15);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+    --btn-radius: 12px;
+    --font-display: 'Oswald', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg-primary: #f0fdf4;
+    --bg-secondary: #dcfce7;
+    --bg-card: #ffffff;
+    --bg-elevated: #f0fdf4;
+    --accent-green: #16a34a;
+    --accent-lime: #65a30d;
+    --text-primary: #052e16;
+    --text-secondary: #166534;
+    --text-muted: #15803d;
+    --text-dim: #bbf7d0;
+    --border-color: #bbf7d0;
+    --border-glow: rgba(22, 163, 74, 0.25);
+    --shadow-green: 0 0 20px rgba(22, 163, 74, 0.1);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.1);
+  }
+
+  /* =============================================
+     RESET & BASE
+  ============================================= */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* =============================================
+     LAYOUT
+  ============================================= */
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px;
+    padding-bottom: 40px;
+  }
+
+  /* =============================================
+     HEADER
+  ============================================= */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 14px;
+  }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cricket-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 12px rgba(34,197,94,0.4);
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-green);
+    line-height: 1;
+  }
+
+  .header h1 span {
+    display: block;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .header-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .icon-btn:hover { border-color: var(--accent-green); color: var(--accent-green); }
+  .icon-btn:active { transform: scale(0.92); }
+
+  /* =============================================
+     STATUS BAR
+  ============================================= */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+
+  .status-dot.live {
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+    animation: pulse 1.5s infinite;
+  }
+
+  .status-dot.paused { background: var(--accent-amber); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  #status-text { color: var(--text-muted); flex: 1; }
+  #innings-label { color: var(--text-secondary); font-weight: 600; }
+
+  /* =============================================
+     MAIN SCOREBOARD
+  ============================================= */
+  .scoreboard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-green);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scoreboard::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-lime));
+  }
+
+  .score-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .score-runs {
+    font-family: var(--font-display);
+    font-size: 80px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-primary);
+    letter-spacing: -2px;
+    transition: all 0.15s;
+  }
+
+  .score-sep {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1;
+  }
+
+  .score-wickets {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 400;
+    color: var(--accent-red);
+    line-height: 1;
+  }
+
+  .score-meta {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 8px;
+  }
+
+  .meta-item {
+    text-align: center;
+  }
+
+  .meta-value {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: block;
+  }
+
+  .meta-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* Ball sequence display */
+  .ball-sequence {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+    min-height: 34px;
+    flex-wrap: wrap;
+  }
+
+  .ball-chip {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    border: 2px solid transparent;
+    transition: transform 0.2s;
+  }
+
+  .ball-chip.dot { background: var(--bg-elevated); color: var(--text-muted); border-color: var(--border-color); }
+  .ball-chip.run-1, .ball-chip.run-2, .ball-chip.run-3 { background: rgba(34,197,94,0.15); color: var(--accent-green); border-color: var(--accent-green); }
+  .ball-chip.run-4 { background: rgba(132,204,22,0.15); color: var(--accent-lime); border-color: var(--accent-lime); }
+  .ball-chip.run-6 { background: rgba(245,158,11,0.2); color: var(--accent-amber); border-color: var(--accent-amber); }
+  .ball-chip.wicket { background: rgba(239,68,68,0.15); color: var(--accent-red); border-color: var(--accent-red); }
+  .ball-chip.wide, .ball-chip.noball { background: rgba(249,115,22,0.15); color: var(--accent-orange); border-color: var(--accent-orange); }
+  .ball-chip.bye, .ball-chip.legbye { background: rgba(59,130,246,0.15); color: var(--accent-blue); border-color: var(--accent-blue); }
+
+  .ball-chip.current { border-style: dashed; opacity: 0.5; }
+
+  .ball-chip.pop {
+    animation: chipPop 0.3s ease-out;
+  }
+
+  @keyframes chipPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Last ball badge */
+  .last-ball-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .last-ball-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .last-ball-value {
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .crr-badge {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .crr-badge span {
+    color: var(--accent-lime);
+    font-weight: 700;
+  }
+
+  /* =============================================
+     MATCH CONTROLS
+  ============================================= */
+  .match-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .ctrl-btn {
+    padding: 12px 8px;
+    border-radius: var(--btn-radius);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ctrl-btn .btn-icon { font-size: 18px; }
+  .ctrl-btn:active { transform: scale(0.95); }
+
+  .ctrl-btn.start { border-color: var(--accent-green); color: var(--accent-green); background: rgba(34,197,94,0.08); }
+  .ctrl-btn.start:hover { background: rgba(34,197,94,0.2); box-shadow: 0 0 16px rgba(34,197,94,0.2); }
+
+  .ctrl-btn.pause { border-color: var(--accent-amber); color: var(--accent-amber); background: rgba(245,158,11,0.08); }
+  .ctrl-btn.pause:hover { background: rgba(245,158,11,0.2); }
+
+  .ctrl-btn.reset { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.08); }
+  .ctrl-btn.reset:hover { background: rgba(239,68,68,0.2); }
+
+  .ctrl-btn.undo { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59,130,246,0.08); }
+  .ctrl-btn.undo:hover { background: rgba(59,130,246,0.2); }
+
+  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  /* =============================================
+     SECTION HEADERS
+  ============================================= */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  /* =============================================
+     RUNS BUTTONS
+  ============================================= */
+  .runs-section { margin-bottom: 12px; }
+
+  .runs-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+
+  .run-btn {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .run-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .run-btn:active::after { opacity: 0.1; }
+  .run-btn:active { transform: scale(0.93); }
+  .run-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  .run-btn.r0 { border-color: var(--border-color); color: var(--text-muted); }
+  .run-btn.r1, .run-btn.r2, .run-btn.r3 { border-color: var(--accent-green); color: var(--accent-green); background: rgba(34,197,94,0.06); }
+  .run-btn.r4 { border-color: var(--accent-lime); color: var(--accent-lime); background: rgba(132,204,22,0.08); font-size: 28px; }
+  .run-btn.r6 { border-color: var(--accent-amber); color: var(--accent-amber); background: rgba(245,158,11,0.08); font-size: 28px; }
+
+  .run-btn.r4:active { box-shadow: 0 0 20px rgba(132,204,22,0.4); }
+  .run-btn.r6:active { box-shadow: 0 0 20px rgba(245,158,11,0.4); }
+
+  /* =============================================
+     EXTRAS SECTION
+  ============================================= */
+  .extras-section { margin-bottom: 12px; }
+
+  .extras-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .extra-btn {
+    padding: 14px 8px;
+    border-radius: var(--btn-radius);
+    border: 2px solid var(--accent-orange);
+    background: rgba(249,115,22,0.06);
+    color: var(--accent-orange);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+
+  .extra-btn .extra-sub {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.7;
+    letter-spacing: 0;
+    margin-top: 2px;
+  }
+
+  .extra-btn.bye, .extra-btn.legbye {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    background: rgba(59,130,246,0.06);
+  }
+
+  .extra-btn:active { transform: scale(0.94); }
+  .extra-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  /* =============================================
+     WICKET SECTION
+  ============================================= */
+  .wicket-section { margin-bottom: 12px; }
+
+  .wicket-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .wicket-btn {
+    padding: 18px;
+    border-radius: var(--btn-radius);
+    border: 2px solid var(--accent-red);
+    background: rgba(239,68,68,0.08);
+    color: var(--accent-red);
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .wicket-btn:active {
+    transform: scale(0.96);
+    box-shadow: 0 0 24px rgba(239,68,68,0.4);
+  }
+
+  .wicket-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .wicket-count-box {
+    width: 70px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--btn-radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .wicket-count-num {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent-red);
+    line-height: 1;
+  }
+
+  .wicket-count-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* =============================================
+     OVER HISTORY
+  ============================================= */
+  .history-section { margin-bottom: 12px; }
+
+  .over-history-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .over-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .over-history-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .over-history-scroll::-webkit-scrollbar { width: 4px; }
+  .over-history-scroll::-webkit-scrollbar-track { background: transparent; }
+  .over-history-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+  .over-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+  }
+
+  .over-row:last-child { border-bottom: none; }
+  .over-row:hover { background: var(--bg-elevated); }
+
+  .over-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 28px;
+    font-weight: 600;
+  }
+
+  .over-balls {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+    flex-wrap: wrap;
+  }
+
+  .over-chip {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .over-chip.dot { background: var(--bg-elevated); color: var(--text-muted); }
+  .over-chip.run { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+  .over-chip.four { background: rgba(132,204,22,0.15); color: var(--accent-lime); }
+  .over-chip.six { background: rgba(245,158,11,0.2); color: var(--accent-amber); }
+  .over-chip.wicket { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+  .over-chip.extra { background: rgba(249,115,22,0.15); color: var(--accent-orange); }
+  .over-chip.bye-chip { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
+
+  .over-total {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .no-overs-msg {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: var(--font-mono);
+  }
+
+  /* =============================================
+     EXTRAS DISPLAY
+  ============================================= */
+  .extras-display {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .extra-stat {
+    text-align: center;
+  }
+
+  .extra-stat-val {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .extra-stat-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .extra-stat.wide .extra-stat-val { color: var(--accent-orange); }
+  .extra-stat.noball .extra-stat-val { color: var(--accent-red); }
+  .extra-stat.bye .extra-stat-val { color: var(--accent-blue); }
+  .extra-stat.legbye .extra-stat-val { color: var(--accent-blue); }
+
+  /* =============================================
+     EXPORT / ADVANCED CONTROLS
+  ============================================= */
+  .advanced-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .adv-btn {
+    padding: 12px;
+    border-radius: var(--btn-radius);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .adv-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
+  .adv-btn:active { transform: scale(0.96); }
+
+  /* =============================================
+     MODAL
+  ============================================= */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 420px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.active .modal { transform: scale(1); }
+
+  .modal h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-green);
+    margin-bottom: 16px;
+  }
+
+  .modal-body {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    background: var(--bg-elevated);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .modal-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .modal-btn.danger { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.1); }
+  .modal-btn.success { border-color: var(--accent-green); color: var(--accent-green); background: rgba(34,197,94,0.1); }
+  .modal-btn:hover { opacity: 0.8; }
+
+  /* =============================================
+     TOAST NOTIFICATION
+  ============================================= */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 2000;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.green { border-color: var(--accent-green); color: var(--accent-green); }
+  .toast.red { border-color: var(--accent-red); color: var(--accent-red); }
+  .toast.amber { border-color: var(--accent-amber); color: var(--accent-amber); }
+
+  /* =============================================
+     OVER COMPLETE FLASH
+  ============================================= */
+  .over-flash {
+    position: fixed;
+    inset: 0;
+    background: rgba(34,197,94,0.08);
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .over-flash.active { opacity: 1; }
+
+  /* =============================================
+     SCORE FLASH ANIMATION
+  ============================================= */
+  @keyframes scoreFlash {
+    0% { color: var(--text-primary); }
+    30% { color: var(--accent-green); transform: scale(1.05); }
+    100% { color: var(--text-primary); transform: scale(1); }
+  }
+
+  .score-runs.flash {
+    animation: scoreFlash 0.4s ease-out;
+  }
+
+  /* =============================================
+     INNINGS SELECTOR
+  ============================================= */
+  .innings-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .inn-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .inn-btn.active {
+    border-color: var(--accent-green);
+    background: rgba(34,197,94,0.1);
+    color: var(--accent-green);
+  }
+
+  /* =============================================
+     FOOTER
+  ============================================= */
+  .footer {
+    text-align: center;
+    padding-top: 20px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    letter-spacing: 2px;
+  }
+
+  /* =============================================
+     RESPONSIVE
+  ============================================= */
+  @media (max-width: 360px) {
+    .score-runs { font-size: 64px; }
+    .score-sep, .score-wickets { font-size: 38px; }
+    .run-btn { font-size: 20px; }
+  }
+
+  @media (min-width: 480px) {
+    #app { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">
+      <div class="cricket-icon">🏏</div>
+      <h1>Umpire<span>Counter Machine</span></h1>
+    </div>
+    <div class="header-controls">
+      <button class="icon-btn" id="theme-toggle" title="Toggle Theme">☀</button>
+      <button class="icon-btn" id="sound-toggle" title="Toggle Sound">🔔</button>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">NOT STARTED</span>
+    <span id="innings-label">1ST INN</span>
+  </div>
+
+  <!-- INNINGS SELECTOR -->
+  <div class="innings-selector">
+    <button class="inn-btn active" id="inn-1-btn" onclick="switchInnings(0)">1st Innings</button>
+    <button class="inn-btn" id="inn-2-btn" onclick="switchInnings(1)">2nd Innings</button>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div class="scoreboard">
+    <div class="score-main">
+      <span class="score-runs" id="score-runs">0</span>
+      <span class="score-sep">/</span>
+      <span class="score-wickets" id="score-wickets">0</span>
+    </div>
+    <div class="score-meta">
+      <div class="meta-item">
+        <span class="meta-value" id="meta-overs">0.0</span>
+        <span class="meta-label">Overs</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value" id="meta-crr">0.00</span>
+        <span class="meta-label">CRR</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-value" id="meta-extras">0</span>
+        <span class="meta-label">Extras</span>
+      </div>
+    </div>
+
+    <!-- Current Over Ball Sequence -->
+    <div class="ball-sequence" id="ball-sequence"></div>
+
+    <!-- Last Ball + CRR -->
+    <div class="last-ball-row">
+      <div class="last-ball-badge">
+        <span>LAST</span>
+        <span class="last-ball-value" id="last-ball">—</span>
+      </div>
+      <div class="crr-badge">PREV OVER: <span id="prev-over-display">—</span></div>
+    </div>
+  </div>
+
+  <!-- MATCH CONTROLS -->
+  <div class="match-controls">
+    <button class="ctrl-btn start" id="start-btn" onclick="startMatch()">
+      <span class="btn-icon">▶</span>Start
+    </button>
+    <button class="ctrl-btn pause" id="pause-btn" onclick="togglePause()" disabled>
+      <span class="btn-icon">⏸</span>Pause
+    </button>
+    <button class="ctrl-btn undo" id="undo-btn" onclick="undoLast()" disabled>
+      <span class="btn-icon">↩</span>Undo
+    </button>
+  </div>
+
+  <!-- RUNS SECTION -->
+  <div class="runs-section">
+    <div class="section-label">— Runs —</div>
+    <div class="runs-grid">
+      <button class="run-btn r0" onclick="addRuns(0)" id="btn-0" disabled>0</button>
+      <button class="run-btn r1" onclick="addRuns(1)" id="btn-1" disabled>1</button>
+      <button class="run-btn r2" onclick="addRuns(2)" id="btn-2" disabled>2</button>
+      <button class="run-btn r3" onclick="addRuns(3)" id="btn-3" disabled>3</button>
+      <button class="run-btn r4" onclick="addRuns(4)" id="btn-4" disabled>4</button>
+      <button class="run-btn r6" onclick="addRuns(6)" id="btn-6" disabled>6</button>
+    </div>
+  </div>
+
+  <!-- EXTRAS SECTION -->
+  <div class="extras-section">
+    <div class="section-label">— Extras —</div>
+    <div class="extras-grid">
+      <button class="extra-btn wide" onclick="addExtra('wide')" id="btn-wide" disabled>
+        Wide<span class="extra-sub">+1 extra ball</span>
+      </button>
+      <button class="extra-btn noball" onclick="addExtra('noball')" id="btn-noball" disabled>
+        No Ball<span class="extra-sub">+1 extra ball</span>
+      </button>
+      <button class="extra-btn bye" onclick="addExtra('bye')" id="btn-bye" disabled>
+        Bye<span class="extra-sub">legal ball</span>
+      </button>
+      <button class="extra-btn legbye" onclick="addExtra('legbye')" id="btn-legbye" disabled>
+        Leg Bye<span class="extra-sub">legal ball</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- WICKET SECTION -->
+  <div class="wicket-section">
+    <div class="section-label">— Wicket —</div>
+    <div class="wicket-row">
+      <button class="wicket-btn" onclick="addWicket()" id="btn-wicket" disabled>
+        <span>🚨</span> WICKET
+      </button>
+      <div class="wicket-count-box">
+        <span class="wicket-count-num" id="wicket-count-display">0</span>
+        <span class="wicket-count-label">Wickets</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXTRAS STATS -->
+  <div class="section-label">— Extras Breakdown —</div>
+  <div class="extras-display">
+    <div class="extra-stat wide">
+      <span class="extra-stat-val" id="stat-wide">0</span>
+      <span class="extra-stat-label">Wide</span>
+    </div>
+    <div class="extra-stat noball">
+      <span class="extra-stat-val" id="stat-noball">0</span>
+      <span class="extra-stat-label">No Ball</span>
+    </div>
+    <div class="extra-stat bye">
+      <span class="extra-stat-val" id="stat-bye">0</span>
+      <span class="extra-stat-label">Bye</span>
+    </div>
+    <div class="extra-stat legbye">
+      <span class="extra-stat-val" id="stat-legbye">0</span>
+      <span class="extra-stat-label">Leg Bye</span>
+    </div>
+  </div>
+
+  <!-- OVER HISTORY -->
+  <div class="history-section">
+    <div class="section-label">— Over History —</div>
+    <div class="over-history-box">
+      <div class="over-history-header">
+        <span>OVR</span>
+        <span>BALL-BY-BALL</span>
+        <span>RUNS</span>
+      </div>
+      <div class="over-history-scroll" id="over-history">
+        <div class="no-overs-msg">No overs bowled yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVANCED CONTROLS -->
+  <div class="advanced-row">
+    <button class="adv-btn" onclick="showExport()">📤 Export</button>
+    <button class="ctrl-btn reset adv-btn" onclick="confirmReset()" style="font-size:13px">🔄 Reset Match</button>
+  </div>
+
+  <div class="footer">CRICKET UMPIRE COUNTER v2.0 • OFFLINE READY</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="modal">
+    <h3 id="modal-title">Confirm</h3>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+
+<!-- OVER FLASH -->
+<div class="over-flash" id="over-flash"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ============================================================
+// STATE SCHEMA
+// Each innings stores its own independent scoring state.
+// The `undoStack` holds full deep-copied snapshots so every
+// undo is a perfect revert — no error-prone delta arithmetic.
+// ============================================================
+
+const createInningsState = () => ({
+  runs: 0,
+  wickets: 0,
+  legalBallsInOver: 0,   // resets to 0 after each completed over
+  totalLegalBalls: 0,    // cumulative, never resets — used for CRR & over count
+  extras: { wide: 0, noball: 0, bye: 0, legbye: 0 },
+  currentOverBalls: [],  // ball objects for the CURRENT (incomplete) over
+  overHistory: [],       // completed overs, index 0 = most recent (for display)
+  undoStack: [],         // array of full innings snapshots (before each action)
+});
+
+let state = {
+  matchStarted: false,
+  paused: false,
+  soundEnabled: true,
+  darkMode: true,
+  currentInnings: 0,
+  innings: [createInningsState(), createInningsState()],
+};
+
+// Shorthand: current innings object
+const curInn = () => state.innings[state.currentInnings];
+
+// ============================================================
+// PERSISTENCE — localStorage
+// ============================================================
+const STORAGE_KEY = 'cricket_umpire_v3';
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    // Merge carefully; ensure innings array is valid
+    state = parsed;
+    if (!Array.isArray(state.innings) || state.innings.length < 2) {
+      state.innings = [createInningsState(), createInningsState()];
+    }
+    // Back-fill any missing fields (schema upgrades)
+    state.innings.forEach(inn => {
+      inn.undoStack        = inn.undoStack        || [];
+      inn.extras           = inn.extras           || { wide: 0, noball: 0, bye: 0, legbye: 0 };
+      inn.currentOverBalls = inn.currentOverBalls  || [];
+      inn.overHistory      = inn.overHistory       || [];
+      inn.legalBallsInOver = inn.legalBallsInOver  ?? 0;
+      inn.totalLegalBalls  = inn.totalLegalBalls   ?? 0;
+    });
+  } catch (e) { /* corrupt storage — ignore, use defaults */ }
+}
+
+// ============================================================
+// SNAPSHOT HELPER — deep clone an innings (excluding undoStack
+// to keep memory manageable; we rebuild it linearly)
+// ============================================================
+function snapshotInnings(inn) {
+  return {
+    runs:              inn.runs,
+    wickets:           inn.wickets,
+    legalBallsInOver:  inn.legalBallsInOver,
+    totalLegalBalls:   inn.totalLegalBalls,
+    extras:            { ...inn.extras },
+    currentOverBalls:  inn.currentOverBalls.map(b => ({ ...b })),
+    overHistory:       inn.overHistory.map(o => ({
+                         overNum:   o.overNum,
+                         totalRuns: o.totalRuns,
+                         balls:     o.balls.map(b => ({ ...b })),
+                       })),
+  };
+}
+
+function pushUndo() {
+  const s = curInn();
+  s.undoStack.push(snapshotInnings(s));
+  // Cap undo depth at 100 entries to limit memory
+  if (s.undoStack.length > 100) s.undoStack.shift();
+}
+
+// ============================================================
+// MATCH CONTROLS
+// ============================================================
+function startMatch() {
+  if (state.matchStarted) return;
+  state.matchStarted = true;
+  state.paused = false;
+  saveState();
+  updateUI();
+  showToast('Match Started! 🏏', 'green');
+  vibrateDevice([50]);
+}
+
+function togglePause() {
+  if (!state.matchStarted) return;
+  state.paused = !state.paused;
+  saveState();
+  updateUI();
+  showToast(state.paused ? 'Match Paused ⏸' : 'Match Resumed ▶', 'amber');
+}
+
+function confirmReset() {
+  showModal(
+    'Reset Match',
+    'Are you sure you want to RESET the entire match?\n\nAll data will be permanently deleted.',
+    [
+      { label: 'Cancel',     cls: '',       action: closeModal },
+      { label: 'Yes, Reset', cls: 'danger', action: resetMatch },
+    ]
+  );
+}
+
+function resetMatch() {
+  const { soundEnabled, darkMode } = state;
+  state = {
+    matchStarted: false,
+    paused: false,
+    soundEnabled,
+    darkMode,
+    currentInnings: 0,
+    innings: [createInningsState(), createInningsState()],
+  };
+  saveState();
+  closeModal();
+  updateUI();
+  showToast('Match Reset', 'red');
+}
+
+function switchInnings(idx) {
+  state.currentInnings = idx;
+  saveState();
+  updateUI();
+  showToast(`Switched to ${idx === 0 ? '1st' : '2nd'} Innings`, 'amber');
+}
+
+// ============================================================
+// GUARD — only allow actions when match is live
+// ============================================================
+function canAct() {
+  if (!state.matchStarted || state.paused) return false;
+  return true;
+}
+
+// ============================================================
+// CORE ACTION: ADD RUNS  (legal delivery)
+// ============================================================
+function addRuns(runs) {
+  if (!canAct()) return;
+  const s = curInn();
+  if (s.wickets >= 10) { showToast('All Out!', 'red'); return; }
+
+  pushUndo();
+
+  s.currentOverBalls.push({ type: 'run', value: runs, legal: true });
+  s.runs              += runs;
+  s.legalBallsInOver  += 1;
+  s.totalLegalBalls   += 1;
+
+  playClick(runs);
+  checkOverComplete();   // may reset legalBallsInOver to 0
+  saveState();
+  updateUI();
+  triggerScoreFlash();
+}
+
+// ============================================================
+// CORE ACTION: EXTRAS
+//   Wide  / No Ball → illegal delivery (ball not counted)
+//   Bye   / Leg Bye → legal delivery (ball counted)
+//   All extras add +1 run by default. No-Ball allows batsman
+//   runs on top but for simplicity we add 1 penalty run here.
+// ============================================================
+function addExtra(type) {
+  if (!canAct()) return;
+  const s = curInn();
+  if (s.wickets >= 10) { showToast('All Out!', 'red'); return; }
+
+  pushUndo();
+
+  const isLegal = (type === 'bye' || type === 'legbye');
+  s.currentOverBalls.push({ type, value: 1, legal: isLegal });
+  s.runs         += 1;
+  s.extras[type] += 1;
+
+  if (isLegal) {
+    s.legalBallsInOver += 1;
+    s.totalLegalBalls  += 1;
+  }
+
+  playClick(0);
+  if (isLegal) checkOverComplete();
+  saveState();
+  updateUI();
+
+  const labels = { wide: 'Wide +1', noball: 'No Ball +1', bye: 'Bye +1', legbye: 'Leg Bye +1' };
+  showToast(`${labels[type]}${!isLegal ? ' (extra ball)' : ''}`, 'amber');
+  vibrateDevice([30, 20, 30]);
+  triggerScoreFlash();
+}
+
+// ============================================================
+// CORE ACTION: WICKET
+// A wicket is always recorded on the CURRENT delivery.
+// If pressed AFTER a run button (meaning the last ball is
+// already in currentOverBalls), we annotate that ball.
+// If pressed FIRST (umpire records wicket then runs), we
+// insert a 0-run wicket delivery and count it as a legal ball.
+// ============================================================
+function addWicket() {
+  if (!canAct()) return;
+  const s = curInn();
+  if (s.wickets >= 10) { showToast('Already All Out!', 'red'); return; }
+
+  pushUndo();
+
+  s.wickets += 1;
+
+  // Annotate the last ball of the current over with wicket flag
+  // (typical flow: umpire presses run first, then wicket)
+  if (s.currentOverBalls.length > 0) {
+    const lastBall = s.currentOverBalls[s.currentOverBalls.length - 1];
+    // Only annotate if it was a legal delivery not yet wicket-flagged
+    if (!lastBall.wicket) {
+      lastBall.wicket = true;
+    }
+    // Do NOT add another delivery — the wicket happened on the last ball
+  } else {
+    // No ball bowled yet in this over — insert a 0-run wicket delivery
+    s.currentOverBalls.push({ type: 'run', value: 0, legal: true, wicket: true });
+    s.legalBallsInOver += 1;
+    s.totalLegalBalls  += 1;
+    checkOverComplete();
+  }
+
+  playWicket();
+  saveState();
+  updateUI();
+  showToast('WICKET! 🚨', 'red');
+  vibrateDevice([100, 50, 100, 50, 200]);
+  triggerScoreFlash();
+
+  if (s.wickets >= 10) {
+    setTimeout(() => showToast('ALL OUT! Innings Over 🏏', 'red'), 900);
+  }
+}
+
+// ============================================================
+// OVER COMPLETION CHECK
+// Called after every legal delivery.
+// ============================================================
+function checkOverComplete() {
+  const s = curInn();
+  if (s.legalBallsInOver < 6) return;
+
+  // Tally runs for this completed over
+  const overRuns = s.currentOverBalls.reduce((sum, b) => sum + b.value, 0);
+  const completedOverNumber = s.overHistory.length + 1; // 1-based
+
+  // Prepend so index 0 = most recent (latest over at top of list)
+  s.overHistory.unshift({
+    overNum:   completedOverNumber,
+    balls:     s.currentOverBalls.map(b => ({ ...b })),
+    totalRuns: overRuns,
+  });
+
+  // Reset for new over
+  s.currentOverBalls  = [];
+  s.legalBallsInOver  = 0;
+
+  triggerOverFlash();
+  showToast(`Over ${completedOverNumber} done — ${overRuns} run${overRuns !== 1 ? 's' : ''}`, 'green');
+  vibrateDevice([50, 30, 50, 30, 100]);
+}
+
+// ============================================================
+// UNDO — restore full innings snapshot
+// ============================================================
+function undoLast() {
+  if (!canAct()) return;
+  const s = curInn();
+
+  if (s.undoStack.length === 0) {
+    showToast('Nothing to undo', 'amber');
+    return;
+  }
+
+  // Pop the last snapshot and restore every field
+  const snap = s.undoStack.pop();
+  s.runs              = snap.runs;
+  s.wickets           = snap.wickets;
+  s.legalBallsInOver  = snap.legalBallsInOver;
+  s.totalLegalBalls   = snap.totalLegalBalls;
+  s.extras            = { ...snap.extras };
+  s.currentOverBalls  = snap.currentOverBalls.map(b => ({ ...b }));
+  s.overHistory       = snap.overHistory.map(o => ({
+    overNum:   o.overNum,
+    totalRuns: o.totalRuns,
+    balls:     o.balls.map(b => ({ ...b })),
+  }));
+  // Note: undoStack is NOT inside the snapshot, so the pop above
+  // correctly peels back one level without infinite recursion.
+
+  saveState();
+  updateUI();
+  showToast('↩ Last action undone', 'amber');
+  vibrateDevice([30]);
+}
+
+// ============================================================
+// UI — CENTRAL RENDER
+// ============================================================
+function updateUI() {
+  const s          = curInn();
+  const isActive   = state.matchStarted && !state.paused;
+  const gameActive = isActive && s.wickets < 10;
+
+  // --- Status bar ---
+  const dot  = document.getElementById('status-dot');
+  const stxt = document.getElementById('status-text');
+  dot.className = 'status-dot' +
+    (state.matchStarted ? (state.paused ? ' paused' : ' live') : '');
+  stxt.textContent = !state.matchStarted ? 'NOT STARTED'
+                   : state.paused        ? 'PAUSED'
+                   :                       'LIVE';
+
+  document.getElementById('innings-label').textContent =
+    state.currentInnings === 0 ? '1ST INN' : '2ND INN';
+
+  // --- Scoreboard ---
+  document.getElementById('score-runs').textContent    = s.runs;
+  document.getElementById('score-wickets').textContent = s.wickets;
+
+  // Overs: completedOvers.legalBallsInOver
+  const completedOvers = s.overHistory.length;
+  document.getElementById('meta-overs').textContent =
+    `${completedOvers}.${s.legalBallsInOver}`;
+
+  // Current Run Rate: runs / total overs bowled (including partial)
+  const totalOversFraction = completedOvers + s.legalBallsInOver / 6;
+  const crr = totalOversFraction > 0
+    ? (s.runs / totalOversFraction).toFixed(2) : '0.00';
+  document.getElementById('meta-crr').textContent = crr;
+
+  // Extras total
+  const totalExtras = s.extras.wide + s.extras.noball + s.extras.bye + s.extras.legbye;
+  document.getElementById('meta-extras').textContent = totalExtras;
+
+  // Extras breakdown
+  document.getElementById('stat-wide').textContent   = s.extras.wide;
+  document.getElementById('stat-noball').textContent = s.extras.noball;
+  document.getElementById('stat-bye').textContent    = s.extras.bye;
+  document.getElementById('stat-legbye').textContent = s.extras.legbye;
+
+  // Wicket count box
+  document.getElementById('wicket-count-display').textContent = s.wickets;
+
+  // Ball sequence for current over
+  renderBallSequence(s.currentOverBalls, s.legalBallsInOver);
+
+  // Previous over summary (most recent completed over = index 0)
+  if (s.overHistory.length > 0) {
+    const prev    = s.overHistory[0];
+    const seqStr  = prev.balls.map(b => formatBallLabel(b)).join('  ');
+    document.getElementById('prev-over-display').textContent =
+      `O${prev.overNum}: ${seqStr}`;
+  } else {
+    document.getElementById('prev-over-display').textContent = '—';
+  }
+
+  // Over history panel
+  renderOverHistory(s.overHistory);
+
+  // --- Button enable / disable ---
+  ['btn-0','btn-1','btn-2','btn-3','btn-4','btn-6'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !gameActive;
+  });
+  ['btn-wide','btn-noball','btn-bye','btn-legbye','btn-wicket'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !gameActive;
+  });
+
+  document.getElementById('pause-btn').disabled  = !state.matchStarted;
+  document.getElementById('undo-btn').disabled   = !isActive || s.undoStack.length === 0;
+  document.getElementById('start-btn').disabled  = state.matchStarted;
+
+  // Pause button label
+  const pauseBtn = document.getElementById('pause-btn');
+  pauseBtn.innerHTML = state.paused
+    ? '<span class="btn-icon">▶</span>Resume'
+    : '<span class="btn-icon">⏸</span>Pause';
+
+  // Innings tab highlight
+  document.getElementById('inn-1-btn').className =
+    'inn-btn' + (state.currentInnings === 0 ? ' active' : '');
+  document.getElementById('inn-2-btn').className =
+    'inn-btn' + (state.currentInnings === 1 ? ' active' : '');
+
+  // Theme / sound icons
+  document.getElementById('theme-toggle').textContent =
+    state.darkMode ? '☀' : '🌙';
+  document.getElementById('sound-toggle').textContent =
+    state.soundEnabled ? '🔔' : '🔕';
+}
+
+// ============================================================
+// RENDER — ball sequence strip (current over)
+// Shows legal balls + extra deliveries; slots 1-6 show pending
+// ============================================================
+function renderBallSequence(balls, legalCount) {
+  const container = document.getElementById('ball-sequence');
+  container.innerHTML = '';
+
+  // Count how many of the balls in `balls` are legal (for slot numbering)
+  let legalSeen = 0;
+
+  balls.forEach(b => {
+    const chip = document.createElement('div');
+    chip.className = 'ball-chip pop ' + getBallChipClass(b);
+    chip.textContent = formatBallLabel(b);
+    container.appendChild(chip);
+    if (b.legal) legalSeen++;
+  });
+
+  // Fill remaining legal-ball slots (up to 6)
+  for (let i = legalSeen; i < 6; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'ball-chip current';
+    chip.textContent = i + 1;
+    container.appendChild(chip);
+  }
+
+  // Last ball badge
+  if (balls.length > 0) {
+    document.getElementById('last-ball').textContent =
+      formatBallLabel(balls[balls.length - 1]);
+  } else {
+    document.getElementById('last-ball').textContent = '—';
+  }
+}
+
+// ============================================================
+// RENDER — completed over history list
+// ============================================================
+function renderOverHistory(history) {
+  const container = document.getElementById('over-history');
+  if (!history || history.length === 0) {
+    container.innerHTML = '<div class="no-overs-msg">No overs bowled yet</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  // history[0] = most recent; render in that order (newest at top)
+  history.forEach(over => {
+    const row = document.createElement('div');
+    row.className = 'over-row';
+
+    const numEl = document.createElement('div');
+    numEl.className = 'over-number';
+    numEl.textContent = `O${over.overNum}`;
+
+    const ballsEl = document.createElement('div');
+    ballsEl.className = 'over-balls';
+    over.balls.forEach(b => {
+      const chip = document.createElement('div');
+      chip.className = 'over-chip ' + getOverChipClass(b);
+      chip.textContent = formatBallLabel(b);
+      ballsEl.appendChild(chip);
+    });
+
+    const totalEl = document.createElement('div');
+    totalEl.className = 'over-total';
+    totalEl.textContent = over.totalRuns;
+
+    row.appendChild(numEl);
+    row.appendChild(ballsEl);
+    row.appendChild(totalEl);
+    container.appendChild(row);
+  });
+}
+
+// ============================================================
+// BALL LABEL & CSS CLASS HELPERS
+// ============================================================
+function formatBallLabel(b) {
+  if (b.wicket && b.type === 'run' && b.value === 0) return 'W';
+  if (b.wicket) return `${b.value}W`;    // e.g. run-out while scoring 1
+  if (b.type === 'wide')   return 'Wd';
+  if (b.type === 'noball') return 'NB';
+  if (b.type === 'bye')    return 'B';
+  if (b.type === 'legbye') return 'LB';
+  if (b.value === 0)       return '●';
+  return String(b.value);
+}
+
+function getBallChipClass(b) {
+  if (b.wicket)            return 'wicket';
+  if (b.type === 'wide')   return 'wide';
+  if (b.type === 'noball') return 'noball';
+  if (b.type === 'bye')    return 'bye';
+  if (b.type === 'legbye') return 'legbye';
+  if (b.value === 4)       return 'run-4';
+  if (b.value === 6)       return 'run-6';
+  if (b.value === 0)       return 'dot';
+  return `run-${b.value}`;
+}
+
+function getOverChipClass(b) {
+  if (b.wicket)            return 'wicket';
+  if (b.type === 'wide' || b.type === 'noball') return 'extra';
+  if (b.type === 'bye'  || b.type === 'legbye') return 'bye-chip';
+  if (b.value === 4)       return 'four';
+  if (b.value === 6)       return 'six';
+  if (b.value === 0)       return 'dot';
+  return 'run';
+}
+
+// ============================================================
+// EXPORT FEATURE
+// ============================================================
+function showExport() {
+  const formatInnings = (s, num) => {
+    const overs     = s.overHistory.length;
+    const balls     = s.legalBallsInOver;
+    const fraction  = overs + balls / 6;
+    const crr       = fraction > 0 ? (s.runs / fraction).toFixed(2) : '0.00';
+    const extTotal  = s.extras.wide + s.extras.noball + s.extras.bye + s.extras.legbye;
+
+    let t  = `INNINGS ${num}\n${'─'.repeat(32)}\n`;
+    t += `Score  : ${s.runs}/${s.wickets}\n`;
+    t += `Overs  : ${overs}.${balls}\n`;
+    t += `CRR    : ${crr}\n`;
+    t += `Extras : ${extTotal}  (Wd:${s.extras.wide} NB:${s.extras.noball} B:${s.extras.bye} LB:${s.extras.legbye})\n\n`;
+    t += `OVER-BY-OVER\n`;
+
+    // Print overs oldest first (overHistory is newest-first)
+    [...s.overHistory].reverse().forEach(o => {
+      const seq = o.balls.map(b => formatBallLabel(b)).join('  ');
+      t += `  Over ${String(o.overNum).padStart(2)} : ${seq.padEnd(22)} [${o.totalRuns}]\n`;
+    });
+
+    if (s.currentOverBalls.length > 0) {
+      const seq = s.currentOverBalls.map(b => formatBallLabel(b)).join('  ');
+      t += `  Current : ${seq}\n`;
+    }
+    return t;
+  };
+
+  const inn1 = state.innings[0];
+  const inn2 = state.innings[1];
+
+  const summary =
+    `CRICKET MATCH SUMMARY\n${'═'.repeat(32)}\n\n` +
+    formatInnings(inn1, 1) + '\n' +
+    formatInnings(inn2, 2) + '\n' +
+    `Generated : ${new Date().toLocaleString()}`;
+
+  showModal(
+    'Export Summary',
+    summary,
+    [
+      {
+        label: '📋 Copy Text', cls: 'success',
+        action: () => { copyToClipboard(summary); closeModal(); showToast('Copied to clipboard!', 'green'); }
+      },
+      {
+        label: '💾 Export JSON', cls: '',
+        action: () => { exportJSON(); closeModal(); }
+      },
+      { label: 'Close', cls: '', action: closeModal },
+    ]
+  );
+}
+
+function exportJSON() {
+  // Export without undo stack to keep file size clean
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    innings: state.innings.map(s => ({
+      runs: s.runs, wickets: s.wickets,
+      overs: `${s.overHistory.length}.${s.legalBallsInOver}`,
+      extras: s.extras,
+      overHistory: [...s.overHistory].reverse(),
+      currentOver: s.currentOverBalls,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `cricket_match_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON file downloaded', 'green');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+  } else {
+    legacyCopy(text);
+  }
+}
+
+function legacyCopy(text) {
+  const el = Object.assign(document.createElement('textarea'),
+    { value: text, style: 'position:fixed;opacity:0' });
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+}
+
+// ============================================================
+// ANIMATIONS
+// ============================================================
+function triggerScoreFlash() {
+  const el = document.getElementById('score-runs');
+  el.classList.remove('flash');
+  void el.offsetWidth;           // force reflow to restart animation
+  el.classList.add('flash');
+}
+
+function triggerOverFlash() {
+  const flash = document.getElementById('over-flash');
+  flash.classList.add('active');
+  setTimeout(() => flash.classList.remove('active'), 400);
+}
+
+// ============================================================
+// SOUND (Web Audio API — no external files needed)
+// ============================================================
+function playClick(runs) {
+  if (!state.soundEnabled) return;
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    const freqMap = { 0: 300, 1: 440, 2: 500, 3: 540, 4: 660, 6: 880 };
+    const freq = freqMap[runs] ?? 440;
+
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    if (runs === 4 || runs === 6) {
+      // Two-tone flourish for boundaries
+      osc.frequency.setValueAtTime(freq * 1.25, ctx.currentTime + 0.06);
+    }
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.22);
+  } catch (e) {}
+}
+
+function playWicket() {
+  if (!state.soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Three descending pulses
+    [380, 250, 160].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.12;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.22, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.start(t);
+      osc.stop(t + 0.22);
+    });
+  } catch (e) {}
+}
+
+function vibrateDevice(pattern) {
+  try { navigator.vibrate && navigator.vibrate(pattern); } catch (e) {}
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let _toastTimer = null;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  clearTimeout(_toastTimer);
+  el.textContent = msg;
+  el.className   = `toast show ${type}`;
+  _toastTimer    = setTimeout(() => { el.className = 'toast'; }, 2400);
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function showModal(title, body, buttons) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent  = body;
+
+  const btnsEl   = document.getElementById('modal-btns');
+  btnsEl.innerHTML = '';
+  buttons.forEach(({ label, cls, action }) => {
+    const btn       = document.createElement('button');
+    btn.className   = `modal-btn ${cls}`;
+    btn.textContent = label;
+    btn.onclick     = action;
+    btnsEl.appendChild(btn);
+  });
+
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+// ============================================================
+// THEME & SOUND TOGGLES
+// ============================================================
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  state.darkMode = !state.darkMode;
+  document.documentElement.setAttribute('data-theme', state.darkMode ? 'dark' : 'light');
+  saveState();
+  updateUI();
+});
+
+document.getElementById('sound-toggle').addEventListener('click', () => {
+  state.soundEnabled = !state.soundEnabled;
+  saveState();
+  updateUI();
+  showToast(state.soundEnabled ? 'Sound On 🔔' : 'Sound Off 🔕', '');
+});
+
+// ============================================================
+// KEYBOARD SHORTCUTS (desktop convenience)
+// 0-6 → run, w → wicket, space → pause
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (!canAct()) return;
+  const tag = document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  const map = { '0':0, '1':1, '2':2, '3':3, '4':4, '6':6 };
+  if (e.key in map)         addRuns(map[e.key]);
+  else if (e.key === 'w' || e.key === 'W') addWicket();
+  else if (e.key === ' ')   { e.preventDefault(); togglePause(); }
+  else if (e.key === 'z' || e.key === 'Z') undoLast();
+});
+
+// ============================================================
+// BOOT
+// ============================================================
+function init() {
+  loadState();
+  document.documentElement.setAttribute(
+    'data-theme', state.darkMode ? 'dark' : 'light'
+  );
+  updateUI();
+  if (state.matchStarted) {
+    showToast(
+      state.paused ? 'Match paused — tap Resume' : 'Match data restored ✓',
+      state.paused ? 'amber' : 'green'
+    );
+  }
+}
+
+init();
+</script>
+</body>
+</html>
